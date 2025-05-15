@@ -1,21 +1,15 @@
-#include <netdb.h>
+#include "server.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-int create_server(char *port);
-void run_server(int socket_fd);
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    fprintf(stderr, "usage: ./server 3000");
+    fprintf(stderr, "usage: ./server <port>\n");
     exit(1);
   }
 
   char *port = argv[1];
 
-  create_server(port);
+  int socket_fd = create_server(port);
+  run_server(socket_fd);
   return 0;
 }

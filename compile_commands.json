@@ -1,0 +1,30 @@
+[
+  {
+    "arguments": [
+      "/usr/sbin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-std=c99",
+      "-g",
+      "-Iinclude",
+      "-c",
+      "main.c"
+    ],
+    "directory": "/root/projects/c-web-server",
+    "file": "/root/projects/c-web-server/main.c"
+  },
+  {
+    "arguments": [
+      "/usr/sbin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-std=c99",
+      "-g",
+      "-Iinclude",
+      "-c",
+      "server.c"
+    ],
+    "directory": "/root/projects/c-web-server",
+    "file": "/root/projects/c-web-server/server.c"
+  }
+]
