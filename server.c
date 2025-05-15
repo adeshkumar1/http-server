@@ -1,6 +1,8 @@
 #include "server.h"
 #include <sys/socket.h>
 
+extern int endSession;
+
 int create_server(char *port) {
   struct addrinfo hints, *result;
   memset(&hints, 0, sizeof(struct addrinfo));
@@ -39,7 +41,7 @@ int create_server(char *port) {
 }
 
 void run_server(int socket_fd) {
-  while (1) {
+  while (endSession) {
     int client_fd = accept(socket_fd, NULL, NULL);
     if (client_fd == -1) {
       perror("accept failed:");
