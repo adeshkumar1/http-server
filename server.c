@@ -1,7 +1,9 @@
 #include "server.h"
+
+#include <signal.h>
 #include <sys/socket.h>
 
-extern int endSession;
+extern volatile sig_atomic_t endSession;
 
 int create_server(char *port) {
   struct addrinfo hints, *result;
@@ -14,7 +16,7 @@ int create_server(char *port) {
   int getaddr_result = getaddrinfo(NULL, port, &hints, &result);
 
   if (getaddr_result != 0) {
-    fprintf(stderr, "gettaddrinfo: %s\n", gai_strerror(getaddr_result));
+    fprintf(stderr, "gettaddrinfo %s\n", gai_strerror(getaddr_result));
     exit(1);
   }
 
@@ -26,13 +28,13 @@ int create_server(char *port) {
 
   int bind_result = bind(socket_fd, result->ai_addr, result->ai_addrlen);
   if (bind_result == -1) {
-    perror("bind result:");
+    perror("bind result");
     exit(1);
   }
 
   int listen_result = listen(socket_fd, 1024);
   if (listen_result == -1) {
-    perror("listen result:");
+    perror("listen result");
     exit(1);
   }
 
@@ -41,13 +43,17 @@ int create_server(char *port) {
 }
 
 void run_server(int socket_fd) {
-  while (endSession) {
+  while (!endSession) {
     int client_fd = accept(socket_fd, NULL, NULL);
     if (client_fd == -1) {
-      perror("accept failed:");
+      if (errno == EINTR && endSession) {
+        continue;
+      }
+      perror("accept failed");
       continue;
     } else {
       read_request(client_fd);
+      close(client_fd);
     }
   }
 }
