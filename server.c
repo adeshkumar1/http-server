@@ -46,7 +46,10 @@ void run_server(int socket_fd) {
   while (!endSession) {
     int client_fd = accept(socket_fd, NULL, NULL);
     if (client_fd == -1) {
-      if (errno == EINTR && endSession) {
+      if (errno == EINTR) {
+        if (endSession) {
+          break;
+        }
         continue;
       }
       perror("accept failed");
@@ -59,13 +62,53 @@ void run_server(int socket_fd) {
 }
 
 void read_request(int client_fd) {
-  size_t bytes_read = 0;
 
   char buffer[BUFFER_SIZE];
   memset(buffer, 0, BUFFER_SIZE);
 
-  while ((bytes_read = read(client_fd, buffer, sizeof(buffer))) > 0) {
-    fprintf(stderr, "%s\n", buffer);
-    memset(buffer, 0, BUFFER_SIZE);
+  ssize_t bytes_read = read(client_fd, buffer, BUFFER_SIZE - 1);
+  buffer[BUFFER_SIZE - 1] = 0;
+
+  if (bytes_read <= 0) {
+    return;
   }
+
+  // fprintf(stderr, "%s\n", buffer);
+
+  char page[1024];
+
+  parse_request(buffer, page);
+
+  fprintf(stderr, "page: %s\n", page);
+
+  const char *body = "<html><body><h1>Welcome to site</h1></body></html>";
+  size_t body_len = strlen(body);
+
+  // build header + body
+  char response[512];
+  int header_len =
+      snprintf(response, sizeof(response),
+               "HTTP/1.1 200 OK\r\n"
+               "Content-Type: text/html\r\n"
+               "Content-Length: %zu\r\n"
+               "Connection: close\r\n" // tell the browser we're done
+               "\r\n"
+               "%s",
+               body_len, body);
+
+  // write out exactly header_len bytes
+  write(client_fd, response, header_len);
+  ssize_t total_written = 0;
+  while (total_written < header_len) {
+    ssize_t written =
+        write(client_fd, response + total_written, header_len - total_written);
+    if (written <= 0)
+      break;
+    total_written += written;
+  }
+}
+
+int parse_request(char *buffer, char *page) {
+  sscanf(buffer, "%*s %s", page);
+  return 1;
 }

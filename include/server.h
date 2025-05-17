@@ -19,3 +19,7 @@ int create_server(char *port);
 void run_server(int socket_fd);
 
 void read_request(int client_fd);
+
+int parse_request(char *buffer, char *page);
+
+int write_to_server(char *buffer, int socket_fd);
