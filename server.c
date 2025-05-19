@@ -111,7 +111,6 @@ void respond_request(int client_fd, char *page) {
   char *body = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, file, 0);
 
   size_t body_len = st.st_size;
-  // fprintf(stderr, "body_len: %zu\n", body_len);
 
   char response[512];
   int header_len = snprintf(response, sizeof(response),
@@ -124,14 +123,7 @@ void respond_request(int client_fd, char *page) {
                             body_len, body);
 
   write_to_server(response, client_fd, header_len);
-
-  // char buffer[BUFFER_SIZE];
-  //
-  // size_t bytes_read = 0;
-  // while ((bytes_read = fread(buffer, BUFFER_SIZE, 1, file_ptr)) > 0) {
-  //   fprintf(stderr, "buffer: %s\n", buffer);
-  //   write_to_server(buffer, client_fd, bytes_read);
-  // }
+  close(file);
 }
 
 void router(char *page, char *file_path) {
