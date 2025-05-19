@@ -1,9 +1,8 @@
 #include "server.h"
-
-#include <signal.h>
-#include <sys/socket.h>
+#include "map.h"
 
 extern volatile sig_atomic_t endSession;
+extern map *m;
 
 int create_server(char *port) {
   struct addrinfo hints, *result;
@@ -73,42 +72,74 @@ void read_request(int client_fd) {
     return;
   }
 
-  // fprintf(stderr, "%s\n", buffer);
-
   char page[1024];
+  memset(page, 0, 1024);
 
   parse_request(buffer, page);
-
-  fprintf(stderr, "page: %s\n", page);
-
-  const char *body = "<html><body><h1>Welcome to site</h1></body></html>";
-  size_t body_len = strlen(body);
-
-  // build header + body
-  char response[512];
-  int header_len =
-      snprintf(response, sizeof(response),
-               "HTTP/1.1 200 OK\r\n"
-               "Content-Type: text/html\r\n"
-               "Content-Length: %zu\r\n"
-               "Connection: close\r\n" // tell the browser we're done
-               "\r\n"
-               "%s",
-               body_len, body);
-
-  // write out exactly header_len bytes
-  write(client_fd, response, header_len);
-  ssize_t total_written = 0;
-  while (total_written < header_len) {
-    ssize_t written =
-        write(client_fd, response + total_written, header_len - total_written);
-    if (written <= 0)
-      break;
-    total_written += written;
-  }
+  respond_request(client_fd, page);
 }
 
 int parse_request(char *buffer, char *page) {
   sscanf(buffer, "%*s %s", page);
   return 1;
+}
+
+int write_to_server(char *buffer, int socket_fd, ssize_t bytes_to_write) {
+  ssize_t total_written = 0;
+  while (total_written < bytes_to_write) {
+    ssize_t written = write(socket_fd, buffer + total_written,
+                            bytes_to_write - total_written);
+    if (written <= 0)
+      break;
+    total_written += written;
+  }
+
+  return total_written;
+}
+
+void respond_request(int client_fd, char *page) {
+  char file_path[256];
+  memset(file_path, 0, 256);
+
+  router(page, file_path);
+
+  int file = open(file_path, O_RDONLY);
+
+  struct stat st;
+  stat(file_path, &st);
+
+  char *body = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, file, 0);
+
+  size_t body_len = st.st_size;
+  // fprintf(stderr, "body_len: %zu\n", body_len);
+
+  char response[512];
+  int header_len = snprintf(response, sizeof(response),
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: text/html\r\n"
+                            "Content-Length: %zu\r\n"
+                            "Connection: close\r\n"
+                            "\r\n"
+                            "%s",
+                            body_len, body);
+
+  write_to_server(response, client_fd, header_len);
+
+  // char buffer[BUFFER_SIZE];
+  //
+  // size_t bytes_read = 0;
+  // while ((bytes_read = fread(buffer, BUFFER_SIZE, 1, file_ptr)) > 0) {
+  //   fprintf(stderr, "buffer: %s\n", buffer);
+  //   write_to_server(buffer, client_fd, bytes_read);
+  // }
+}
+
+void router(char *page, char *file_path) {
+  if (m) {
+    if (map_contains(m, page)) {
+      strcpy(file_path, map_get(m, page));
+    } else {
+      strcpy(file_path, "website/unauthorized.html");
+    }
+  }
 }
