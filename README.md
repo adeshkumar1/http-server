@@ -20,16 +20,6 @@ These instructions will get you a copy of the project up and running on your loc
 Prerequisites
 You'll need a C compiler (like gcc) and make installed on your system.
 
-# For Debian/Ubuntu
-sudo apt-get update
-sudo apt-get install build-essential
-
-# For Fedora
-sudo dnf groupinstall "Development Tools"
-
-# For macOS (with Homebrew)
-brew install gcc make
-
 Installation & Running
 Clone the repository:
 
