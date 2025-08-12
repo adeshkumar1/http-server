@@ -62,4 +62,5 @@ If the path is a directory, it generates an HTML page listing the directory cont
 
 If the path is not found, it returns a 404 Not Found error.
 
-### Connection Closing: After the response is sent, the connection is closed, and the thread exits.
+### Connection Closing: 
+After the response is sent, the connection is closed, and the thread exits.
